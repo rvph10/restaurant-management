@@ -1,0 +1,547 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Management
+model User {
+  id                String           @id @default(uuid())
+  email             String           @unique
+  password          String
+  name              String
+  role              UserRole
+  lastLogin         DateTime?
+  isActive          Boolean          @default(true)
+  preferences       Json?
+  monthlyHoursTarget Float?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  // Relations
+  orders            Order[]          @relation("AssignedOrders")
+  cleaningTasks     CleaningTask[]
+  workHours         UserWorkHours[]
+  holidays          Holiday[]
+  shifts            Shift[]
+  processedPayments Payment[]        @relation("ProcessedPayments")
+  blacklistActions  BlackListAction[]
+  announcements     Announcement[]
+  inventoryLogs     InventoryLog[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  COOK
+  DELIVERY
+  CLEANER
+  SERVER
+}
+
+// Time Tracking
+model UserWorkHours {
+  id            String    @id @default(uuid())
+  userId        String
+  workDate      DateTime
+  hoursWorked   Float
+  overtimeHours Float?
+  monthYear     String    // Format: YYYY-MM
+  isHoliday     Boolean  @default(false)
+  isSickLeave   Boolean  @default(false)
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  // Relations
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@map("user_work_hours")
+}
+
+model Holiday {
+  id          String       @id @default(uuid())
+  userId      String
+  approvedById String?
+  startDate   DateTime
+  endDate     DateTime
+  status      HolidayStatus
+  holidayType HolidayType
+  reason      String?
+  notes       String?
+  approvedAt  DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  user        User        @relation(fields: [userId], references: [id])
+
+  @@map("holidays")
+}
+
+enum HolidayStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum HolidayType {
+  PAID_LEAVE
+  UNPAID_LEAVE
+  SICK_LEAVE
+}
+
+// Shift Management
+model Shift {
+  id            String     @id @default(uuid())
+  userId        String
+  startTime     DateTime
+  endTime       DateTime
+  shiftType     ShiftType
+  isActive      Boolean    @default(true)
+  breakDuration Int        // in minutes
+  notes         String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  // Relations
+  user          User       @relation(fields: [userId], references: [id])
+  tasks         ShiftTask[]
+
+  @@map("shifts")
+}
+
+enum ShiftType {
+  MORNING
+  AFTERNOON
+  EVENING
+  NIGHT
+}
+
+model ShiftTask {
+  id          String    @id @default(uuid())
+  shiftId     String
+  taskType    String
+  description String
+  status      TaskStatus
+  completedAt DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  shift       Shift     @relation(fields: [shiftId], references: [id])
+
+  @@map("shift_tasks")
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+// Customer Management
+model Customer {
+  id            String    @id @default(uuid())
+  name          String
+  phone         String    @unique
+  email         String?
+  notes         String?
+  preferences   Json?
+  isBlocked     Boolean   @default(false)
+  lastOrder     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  addresses     CustomerAddress[]
+  orders        Order[]
+  blacklistEntries BlackListEntry[]
+  reservations  TableReservation[]
+
+  @@map("customers")
+}
+
+model CustomerAddress {
+  id                  String    @id @default(uuid())
+  customerId          String
+  addressLine1        String
+  addressLine2        String?
+  city               String
+  postalCode         String
+  isDefault          Boolean   @default(false)
+  deliveryInstructions String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  // Relations
+  customer           Customer  @relation(fields: [customerId], references: [id])
+
+  @@map("customer_addresses")
+}
+
+// Order Management
+model Order {
+  id                  String        @id @default(uuid())
+  customerId          String
+  addressId           String?
+  assignedToId        String?
+  status              OrderStatus
+  totalAmount         Float
+  preparationSteps    Json?
+  estimatedDeliveryTime DateTime?
+  isPaid              Boolean       @default(false)
+  notes               String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  // Relations
+  assignedTo          User?         @relation("AssignedOrders", fields: [assignedToId], references: [id])
+  items               OrderItem[]
+  payments            Payment[]
+  tableOrder          TableOrder?
+
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING
+  PREPARING
+  DELIVERING
+  COMPLETED
+  CANCELLED
+}
+
+model OrderItem {
+  id                  String        @id @default(uuid())
+  orderId             String
+  menuItemId          String
+  quantity            Int
+  modifications       Json?
+  unitPrice           Float
+  specialInstructions String?
+
+  // Relations
+  order               Order         @relation(fields: [orderId], references: [id])
+  menuItem            MenuItem      @relation(fields: [menuItemId], references: [id])
+
+  @@map("order_items")
+}
+
+// Payment Management
+model Payment {
+  id            String         @id @default(uuid())
+  orderId       String
+  processedById String
+  method        PaymentMethod
+  status        PaymentStatus
+  amount        Float
+  transactionId String?
+  paymentDetails Json?
+  isRefund      Boolean       @default(false)
+  refundForId   String?
+  notes         String?
+  processedAt   DateTime
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Relations
+  order         Order         @relation(fields: [orderId], references: [id])
+  processedBy   User          @relation("ProcessedPayments", fields: [processedById], references: [id])
+  refundFor     Payment?      @relation("RefundRelation", fields: [refundForId], references: [id])
+  refunds       Payment[]     @relation("RefundRelation")
+
+  @@map("payments")
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  ONLINE
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+// Menu Management
+model MenuItem {
+  id                    String    @id @default(uuid())
+  name                  String
+  description           String?
+  price                 Float
+  category              String
+  available             Boolean   @default(true)
+  preparationInstructions Json?
+  imageUrl             String?
+  active               Boolean   @default(true)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  // Relations
+  orderItems           OrderItem[]
+  ingredients          MenuItemIngredient[]
+
+  @@map("menu_items")
+}
+
+model MenuItemIngredient {
+  id              String    @id @default(uuid())
+  menuItemId      String
+  inventoryId     String
+  quantityRequired Float
+  unit            String
+
+  // Relations
+  menuItem        MenuItem  @relation(fields: [menuItemId], references: [id])
+  inventory       Inventory @relation(fields: [inventoryId], references: [id])
+
+  @@map("menu_item_ingredients")
+}
+
+// Table Management
+model Table {
+  id                String    @id @default(uuid())
+  tableNumber      String    @unique
+  sectionId        String
+  capacity         Int
+  status           TableStatus
+  qrCode          String    @unique
+  isActive        Boolean   @default(true)
+  coordinates      Json?     // {x: number, y: number}
+  lastStatusChange DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Relations
+  section          TableSection @relation(fields: [sectionId], references: [id])
+  orders           TableOrder[]
+  reservations     TableReservation[]
+
+  @@map("tables")
+}
+
+enum TableStatus {
+  FREE
+  OCCUPIED
+  RESERVED
+  CLEANING
+}
+
+model TableSection {
+  id            String    @id @default(uuid())
+  name          String
+  description   String?
+  floorNumber   Int
+  isSmoking     Boolean   @default(false)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  tables        Table[]
+
+  @@map("table_sections")
+}
+
+model TableOrder {
+  id            String    @id @default(uuid())
+  tableId       String
+  orderId       String    @unique
+  serverId      String
+  guestsCount   Int
+  seatedAt      DateTime
+  seatNumbers   Json?     // {seat: number, orders: string[]}
+  isSplitBill   Boolean   @default(false)
+  specialRequests String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  table         Table     @relation(fields: [tableId], references: [id])
+  order         Order     @relation(fields: [orderId], references: [id])
+
+  @@map("table_orders")
+}
+
+model TableReservation {
+  id              String            @id @default(uuid())
+  tableId         String
+  customerId      String
+  customerName    String
+  contactNumber   String
+  guestsCount     Int
+  reservationTime DateTime
+  durationMinutes Int
+  status          ReservationStatus
+  specialRequests String?
+  depositInfo     Json?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  // Relations
+  table           Table             @relation(fields: [tableId], references: [id])
+  customer        Customer          @relation(fields: [customerId], references: [id])
+
+  @@map("table_reservations")
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  SEATED
+  CANCELLED
+  NO_SHOW
+}
+
+// Inventory Management
+model Inventory {
+  id              String    @id @default(uuid())
+  name            String
+  category        String
+  currentStock    Float
+  unit            String
+  minimumStock    Float
+  reorderPoint    Float
+  reorderQuantity Float
+  needsReorder    Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  logs            InventoryLog[]
+  menuItems       MenuItemIngredient[]
+
+  @@map("inventory")
+}
+
+model InventoryLog {
+  id              String          @id @default(uuid())
+  inventoryId     String
+  userId          String
+  actionType      InventoryAction
+  quantityChanged Float
+  reason          String
+  createdAt       DateTime        @default(now())
+
+  // Relations
+  inventory       Inventory       @relation(fields: [inventoryId], references: [id])
+  user            User            @relation(fields: [userId], references: [id])
+
+  @@map("inventory_logs")
+}
+
+enum InventoryAction {
+  ADDITION
+  DEDUCTION
+  ADJUSTMENT
+}
+
+// Blacklist Management
+model BlackListEntry {
+  id          String          @id @default(uuid())
+  customerId  String
+  createdById String
+  startDate   DateTime
+  endDate     DateTime?
+  severity    BlacklistSeverity
+  reason      String
+  isActive    Boolean         @default(true)
+  evidence    Json?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  // Relations
+  customer    Customer        @relation(fields: [customerId], references: [id])
+  actions     BlackListAction[]
+
+  @@map("blacklist_entries")
+}
+
+enum BlacklistSeverity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model BlackListAction {
+  id                String            @id @default(uuid())
+  blacklistEntryId  String
+  performedById     String
+  actionType        BlacklistAction
+  notes             String?
+  actionDetails     Json?
+  createdAt         DateTime          @default(now())
+
+  // Relations
+  blacklistEntry    BlackListEntry    @relation(fields: [blacklistEntryId], references: [id])
+  performedBy       User              @relation(fields: [performedById], references: [id])
+
+  @@map("blacklist_actions")
+}
+
+enum BlacklistAction {
+  WARNING
+  BLOCK
+  UNBLOCK
+}
+
+// Cleaning Tasks
+model CleaningTask {
+  id          String            @id @default(uuid())
+  title       String
+  description String?
+  status      CleaningTaskStatus
+  assignedToId String?
+  dueDate     DateTime
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  // Relations
+  assignedTo  User?             @relation(fields: [assignedToId], references: [id])
+
+  @@map("cleaning_tasks")
+}
+
+enum CleaningTaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+// Announcement System
+model Announcement {
+  id                    String    @id @default(uuid())
+  createdById          String
+  title                String
+  content              String
+  startDate            DateTime
+  endDate              DateTime
+  priority             Priority
+  isActive             Boolean   @default(true)
+  requiresAcknowledgment Boolean  @default(false)
+  acknowledgedBy       Json?     // Array of user IDs
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  // Relations
+  createdBy            User      @relation(fields: [createdById], references: [id])
+
+  @@map("announcements")
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
