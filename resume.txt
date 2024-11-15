@@ -1,0 +1,1208 @@
+File: /home/rvph/restaurant-management/allfile.sh
+#!/bin/bash
+
+# Directory to process (current directory)
+DIR=$(pwd)
+
+# Output file
+OUTPUT="resume.txt"
+
+# Clear the output file if it exists
+> $OUTPUT
+
+# Function to process each file
+process_file() {
+  local file_path=$1
+  echo "Processing $file_path"
+  echo "File: $file_path" >> $OUTPUT
+  cat "$file_path" >> $OUTPUT
+  echo -e "\n\n" >> $OUTPUT
+}
+
+# Export the function to be used by find
+export -f process_file
+export OUTPUT
+
+# Find all files excluding specified patterns and process them
+find $DIR -type f \
+  ! -path "*/node_modules/*" \
+  ! -path "*/.github/*" \
+  ! -path "*/.git/*" \
+  ! -path "*/.next/*" \
+  ! -name "README*" \
+  ! -name "package-lock.json" \
+  ! -name "LICENSE" \
+  ! -name ".gitignore" \
+  ! -name "*.svg" \
+  ! -name "*.woff" \
+  ! -name "*.ico" \
+  ! -name "*.css" \
+  ! -name ".env.example" \
+  ! -name "*.Dockerfile" \
+  -exec bash -c 'process_file "$0"' {} \;
+
+echo "All files have been processed and written to $OUTPUT"
+
+
+
+File: /home/rvph/restaurant-management/server/tsconfig.json
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "module": "commonjs",
+    "lib": ["es2017", "esnext.asynciterable"],
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "moduleResolution": "node",
+    "removeComments": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "resolveJsonModule": true,
+    "baseUrl": "."
+  },
+  "exclude": ["node_modules"],
+  "include": ["./src/**/*.ts"]
+}
+
+
+
+File: /home/rvph/restaurant-management/server/.env
+# Server Configuration
+NODE_ENV=development
+PORT=5000
+
+# Database Configuration
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/restaurant_db
+DATABASE_USER=postgres
+DATABASE_PASSWORD=postgres
+DATABASE_NAME=restaurant_db
+DATABASE_PORT=5432
+DATABASE_HOST=localhost
+
+# Redis Configuration
+REDIS_URL=redis://localhost:6379
+REDIS_HOST=localhost
+REDIS_PORT=6379
+
+# JWT Configuration
+JWT_SECRET=your-super-secret-key-change-this-in-production
+JWT_EXPIRES_IN=7d
+
+# Cors Configuration
+CORS_ORIGIN=http://localhost:3000
+
+# Logging
+LOG_LEVEL=debug
+
+# Socket.io Configuration
+SOCKET_PATH=/socket.io
+
+# Rate Limiting
+RATE_LIMIT_WINDOW=15
+RATE_LIMIT_MAX_REQUESTS=100
+
+# Security
+BCRYPT_SALT_ROUNDS=10
+
+
+File: /home/rvph/restaurant-management/server/package.json
+{
+"name": "restaurant-management-server",
+"version": "1.0.0",
+"private": true,
+    "scripts": {
+        "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+        "build": "tsc",
+        "start": "node dist/index.js",
+        "test": "jest",
+        "migrate": "knex migrate:latest",
+        "seed": "knex seed:run",
+        "lint": "eslint . --ext .ts",
+        "format": "prettier --write 'src/**/*.{ts,json}'"
+    },
+    "dependencies": {
+        "express": "^4.21.1",
+        "bcryptjs": "^2.4.3",
+        "cors": "^2.8.5",
+        "dotenv": "^16.4.5",
+        "knex": "^3.1.0",
+        "pg": "^8.13.1",
+        "redis": "^4.7.0",
+        "socket.io": "^4.8.1",
+        "zod": "^3.23.8",
+        "jsonwebtoken": "^9.0.2"
+    },
+    "devDependencies": {
+        "@types/express": "^5.0.0",
+        "@types/bcryptjs": "^2.4.6",
+        "@types/jest": "^29.5.14",
+        "@types/jsonwebtoken": "^9.0.7",
+        "@types/node": "^22.9.0",
+        "@typescript-eslint/eslint-plugin": "^8.14.0",
+        "@typescript-eslint/parser": "^8.14.0",
+        "eslint": "^9.14.0",
+        "jest": "29.7.0",
+        "ts-jest": "29.2.5",
+        "ts-node-dev": "^2.0.0",
+        "typescript": "^5.6.3",
+        "prettier": "^3.3.3"
+    },
+    "jest": {
+        "preset": "ts-jest",
+        "testEnvironment": "node",
+        "moduleNameMapper": {
+        "^@/(.*)$": "<rootDir>/src/$1"
+        },
+        "moduleFileExtensions": ["ts", "tsx", "js", "jsx", "json", "node"]
+    }
+}
+
+
+File: /home/rvph/restaurant-management/server/knexfile.ts
+import { config } from './src/config';
+import type { Knex } from 'knex';
+
+const knexConfig: { [key: string]: Knex.Config } = {
+  development: {
+    client: 'pg',
+    connection: config.databaseUrl,
+    pool: {
+      min: 2,
+      max: 10
+    },
+    migrations: {
+      tableName: 'knex_migrations',
+      directory: './src/db/migrations'
+    },
+    seeds: {
+      directory: './src/db/seeds'
+    }
+  },
+  test: {
+    client: 'pg',
+    connection: config.databaseUrl,
+    migrations: {
+      tableName: 'knex_migrations',
+      directory: './src/db/migrations'
+    },
+    seeds: {
+      directory: './src/db/seeds'
+    }
+  },
+  production: {
+    client: 'pg',
+    connection: config.databaseUrl,
+    pool: {
+      min: 2,
+      max: 10
+    },
+    migrations: {
+      tableName: 'knex_migrations',
+      directory: './src/db/migrations'
+    }
+  }
+};
+
+export default knexConfig;
+
+
+
+File: /home/rvph/restaurant-management/server/jest.config.ts
+import type { Config } from '@jest/types';
+
+const config: Config.InitialOptions = {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  roots: ['<rootDir>/src'],
+  transform: {
+    '^.+\\.tsx?$': 'ts-jest'
+  },
+  testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.tsx?$',
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1'
+  },
+  setupFiles: ['dotenv/config']
+};
+
+export default config;
+
+
+File: /home/rvph/restaurant-management/server/src/utils/jwt.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/utils/logger.ts
+export const logger = {
+  info: (message: string, ...args: any[]) => {
+    console.log(`[INFO] ${message}`, ...args);
+  },
+  error: (message: string, ...args: any[]) => {
+    console.error(`[ERROR] ${message}`, ...args);
+  },
+  warn: (message: string, ...args: any[]) => {
+    console.warn(`[WARN] ${message}`, ...args);
+  },
+  debug: (message: string, ...args: any[]) => {
+    console.debug(`[DEBUG] ${message}`, ...args);
+  },
+};
+
+
+
+File: /home/rvph/restaurant-management/server/src/utils/password.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/routes/delivery.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/routes/index.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/routes/auth.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/routes/order.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/routes/cleaning.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/db/migrations/001_initial.ts
+import { Knex } from 'knex';
+
+export async function up(knex: Knex): Promise<void> {
+  // Users table
+  await knex.schema.createTable('users', (table) => {
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
+    table.string('email').unique().notNullable();
+    table.string('password').notNullable();
+    table.string('name').notNullable();
+    table.enum('role', ['admin', 'manager', 'cook', 'delivery', 'cleaner']).notNullable();
+    table.timestamps(true, true);
+  });
+
+  // Orders table
+  await knex.schema.createTable('orders', (table) => {
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
+    table.jsonb('items').notNullable();
+    table.enum('status', [
+      'pending',
+      'preparing',
+      'ready',
+      'delivering',
+      'delivered',
+      'cancelled'
+    ]).notNullable();
+    table.decimal('total_amount', 10, 2).notNullable();
+    table.string('customer_id').notNullable();
+    table.uuid('assigned_to').references('id').inTable('users');
+    table.timestamps(true, true);
+  });
+
+  // Cleaning tasks table
+  await knex.schema.createTable('cleaning_tasks', (table) => {
+    table.uuid('id').primary().defaultTo(knex.raw('gen_random_uuid()'));
+    table.string('title').notNullable();
+    table.text('description');
+    table.enum('status', ['pending', 'in-progress', 'completed']).notNullable();
+    table.uuid('assigned_to').references('id').inTable('users');
+    table.timestamp('due_date').notNullable();
+    table.timestamps(true, true);
+  });
+}
+
+export async function down(knex: Knex): Promise<void> {
+  await knex.schema.dropTable('cleaning_tasks');
+  await knex.schema.dropTable('orders');
+  await knex.schema.dropTable('users');
+}
+
+
+
+File: /home/rvph/restaurant-management/server/src/db/seeds/001_demo_data.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/models/delivery.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/models/user.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/models/cleaning-task.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/models/order.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/services/socket.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/services/delivery.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/services/auth.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/services/order.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/services/cleaning.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/middleware/error-handler.ts
+import { Request, Response, NextFunction } from 'express';
+import { ApiError } from '../types';
+import { logger } from '../utils/logger';
+
+export const errorHandler = (
+  err: ApiError,
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  logger.error(err.message);
+
+  const statusCode = err.statusCode || 500;
+  const message = err.message || 'Internal Server Error';
+  const errors = err.errors || undefined;
+
+  res.status(statusCode).json({
+    success: false,
+    message,
+    errors,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+  });
+};
+
+
+
+File: /home/rvph/restaurant-management/server/src/middleware/validation.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/middleware/auth.ts
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import { config } from '../config';
+import { User } from '../types';
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: User;
+    }
+  }
+}
+
+export const auth = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+
+    if (!token) {
+      throw new Error('Authentication required');
+    }
+
+    const decoded = jwt.verify(token, config.jwt.secret) as any;
+    // TODO: Get user from database
+    // const user = await getUserById(decoded.id);
+
+    // req.user = user;
+    next();
+  } catch (error) {
+    res.status(401).json({ message: 'Please authenticate' });
+  }
+};
+
+
+
+File: /home/rvph/restaurant-management/server/src/sockets/events.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/sockets/handlers.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/index.ts
+import { app } from './app';
+import { config } from './config';
+import { logger } from './utils/logger';
+
+const start = async () => {
+  try {
+    const server = app.listen(config.port, () => {
+      logger.info(`Server is running on port ${config.port}`);
+    });
+
+    // Graceful shutdown
+    process.on('SIGTERM', () => {
+      logger.info('SIGTERM signal received: closing HTTP server');
+      server.close(() => {
+        logger.info('HTTP server closed');
+      });
+    });
+
+  } catch (error) {
+    logger.error('Error starting server:', error);
+    process.exit(1);
+  }
+};
+
+start();
+
+
+
+File: /home/rvph/restaurant-management/server/src/types/index.ts
+export interface User {
+  id: string;
+  email: string;
+  password: string;
+  name: string;
+  role: 'admin' | 'manager' | 'cook' | 'delivery' | 'cleaner';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Order {
+  id: string;
+  items: OrderItem[];
+  status: OrderStatus;
+  totalAmount: number;
+  customerId: string;
+  assignedTo?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface OrderItem {
+  id: string;
+  name: string;
+  quantity: number;
+  price: number;
+  specialInstructions?: string;
+}
+
+export type OrderStatus = 
+  | 'pending'
+  | 'preparing'
+  | 'ready'
+  | 'delivering'
+  | 'delivered'
+  | 'cancelled';
+
+export interface CleaningTask {
+  id: string;
+  title: string;
+  description: string;
+  status: 'pending' | 'in-progress' | 'completed';
+  assignedTo?: string;
+  dueDate: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ApiError extends Error {
+  statusCode: number;
+  errors?: Record<string, string[]>;
+}
+
+
+
+File: /home/rvph/restaurant-management/server/src/app.ts
+import express from 'express';
+import cors from 'cors';
+import { errorHandler } from './middleware/error-handler';
+import { routes } from './routes';
+import { setupSocket } from './sockets';
+
+const app = express();
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Routes
+app.use('/api', routes);
+
+// Error handling
+app.use(errorHandler);
+
+// Socket.io setup
+setupSocket(app);
+
+export { app };
+
+
+
+File: /home/rvph/restaurant-management/server/src/controllers/delivery.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/controllers/auth.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/controllers/order.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/controllers/cleaning.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/config/redis.ts
+import { createClient } from 'redis';
+import { config } from '.';
+import { logger } from '../utils/logger';
+
+export const redisClient = createClient({
+  url: config.redisUrl
+});
+
+redisClient.on('error', (err) => logger.error('Redis Client Error', err));
+redisClient.on('connect', () => logger.info('Redis Client Connected'));
+
+
+
+File: /home/rvph/restaurant-management/server/src/config/socket.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/config/index.ts
+import dotenv from 'dotenv';
+import { z } from 'zod';
+
+dotenv.config();
+
+const envSchema = z.object({
+  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  PORT: z.string().default('5000'),
+  DATABASE_URL: z.string(),
+  REDIS_URL: z.string(),
+  JWT_SECRET: z.string(),
+  JWT_EXPIRES_IN: z.string().default('7d'),
+});
+
+const envVars = envSchema.safeParse(process.env);
+
+if (!envVars.success) {
+  throw new Error(`Environment validation error: ${JSON.stringify(envVars.error.format(), null, 2)}`);
+}
+
+export const config = {
+  env: envVars.data.NODE_ENV,
+  port: parseInt(envVars.data.PORT, 10),
+  databaseUrl: envVars.data.DATABASE_URL,
+  redisUrl: envVars.data.REDIS_URL,
+  jwt: {
+    secret: envVars.data.JWT_SECRET,
+    expiresIn: envVars.data.JWT_EXPIRES_IN,
+  },
+} as const;
+
+
+
+File: /home/rvph/restaurant-management/server/src/config/database.ts
+import knex from 'knex';
+import { config } from '.';
+
+export const db = knex({
+  client: 'pg',
+  connection: config.databaseUrl,
+  pool: {
+    min: 2,
+    max: 10
+  }
+});
+
+
+
+File: /home/rvph/restaurant-management/server/src/validators/delivery.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/validators/auth.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/validators/order.ts
+
+
+
+File: /home/rvph/restaurant-management/server/src/validators/cleaning.ts
+
+
+
+File: /home/rvph/restaurant-management/server/tests/unit/services.test.ts
+import { describe, expect, test } from '@jest/globals';
+
+describe('Service Tests', () => {
+  test('should pass', () => {
+    expect(true).toBe(true);
+  });
+});
+
+
+
+File: /home/rvph/restaurant-management/server/tests/integration/api.test.ts
+
+
+
+File: /home/rvph/restaurant-management/resume.txt
+
+
+
+File: /home/rvph/restaurant-management/docker-compose.yml
+services:
+  client:
+    build:
+      context: ./client
+      dockerfile: ../docker/client.Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:5000
+      - NODE_ENV=development
+    networks:
+      - restaurant-network
+
+  server:
+    build:
+      context: ./server
+      dockerfile: ../docker/server.Dockerfile
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - PORT=5000
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/restaurant_db
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=your-super-secret-key-change-this
+      - JWT_EXPIRES_IN=7d
+      - CORS_ORIGIN=http://localhost:3000
+    networks:
+      - restaurant-network
+
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=restaurant_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - restaurant-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - restaurant-network
+
+networks:
+  restaurant-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+
+
+File: /home/rvph/restaurant-management/package.json
+{
+    "name": "restaurant-management",
+    "version": "1.0.0",
+    "description": "Restaurant management system with delivery tracking and task management",
+    "scripts": {
+      "setup": "npm install && cd client && npm install && cd ../server && npm install",
+      "client": "cd client && npm start",
+      "server": "cd server && npm start",
+      "dev": "concurrently \"npm run server\" \"npm run client\""
+    },
+    "devDependencies": {
+      "concurrently": "^9.1.0"
+    }
+  }
+
+
+File: /home/rvph/restaurant-management/client/tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+
+
+
+File: /home/rvph/restaurant-management/client/next-env.d.ts
+/// <reference types="next" />
+/// <reference types="next/image-types/global" />
+
+// NOTE: This file should not be edited
+// see https://nextjs.org/docs/app/building-your-application/configuring/typescript for more information.
+
+
+
+File: /home/rvph/restaurant-management/client/.eslintrc.json
+{
+  "extends": ["next/core-web-vitals", "next/typescript"]
+}
+
+
+
+File: /home/rvph/restaurant-management/client/package.json
+{
+  "name": "client",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^3.9.1",
+    "@reduxjs/toolkit": "^2.3.0",
+    "@tanstack/react-query": "^5.60.2",
+    "clsx": "^2.1.1",
+    "next": "15.0.3",
+    "react": "19.0.0-rc-66855b96-20241106",
+    "react-dom": "19.0.0-rc-66855b96-20241106",
+    "react-hook-form": "^7.53.2",
+    "react-redux": "^9.1.2",
+    "socket.io-client": "^4.8.1",
+    "tailwind-merge": "^2.5.4",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "eslint": "^9",
+    "eslint-config-next": "15.0.3",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.15",
+    "typescript": "^5"
+  }
+}
+
+
+
+File: /home/rvph/restaurant-management/client/.env.local
+
+
+
+File: /home/rvph/restaurant-management/client/next.config.ts
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  /* config options here */
+};
+
+export default nextConfig;
+
+
+
+File: /home/rvph/restaurant-management/client/src/utils/format.ts
+
+
+
+File: /home/rvph/restaurant-management/client/src/utils/validation.ts
+
+
+
+File: /home/rvph/restaurant-management/client/src/hooks/use-toast.ts
+
+
+
+File: /home/rvph/restaurant-management/client/src/hooks/use-socket.ts
+
+
+
+File: /home/rvph/restaurant-management/client/src/hooks/use-auth.ts
+
+
+
+File: /home/rvph/restaurant-management/client/src/app/dashboard/page.tsx
+
+
+
+File: /home/rvph/restaurant-management/client/src/app/dashboard/cleaning/page.tsx
+
+
+
+File: /home/rvph/restaurant-management/client/src/app/dashboard/layout.tsx
+
+
+
+File: /home/rvph/restaurant-management/client/src/app/dashboard/orders/page.tsx
+
+
+
+File: /home/rvph/restaurant-management/client/src/app/dashboard/delivery/page.tsx
+
+
+
+File: /home/rvph/restaurant-management/client/src/app/page.tsx
+import Image from "next/image";
+
+export default function Home() {
+  return (
+    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
+      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
+        <Image
+          className="dark:invert"
+          src="/next.svg"
+          alt="Next.js logo"
+          width={180}
+          height={38}
+          priority
+        />
+        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
+          <li className="mb-2">
+            Get started by editing{" "}
+            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
+              src/app/page.tsx
+            </code>
+            .
+          </li>
+          <li>Save and see your changes instantly.</li>
+        </ol>
+
+        <div className="flex gap-4 items-center flex-col sm:flex-row">
+          <a
+            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
+            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Image
+              className="dark:invert"
+              src="/vercel.svg"
+              alt="Vercel logomark"
+              width={20}
+              height={20}
+            />
+            Deploy now
+          </a>
+          <a
+            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
+            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Read our docs
+          </a>
+        </div>
+      </main>
+      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
+        <a
+          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
+          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Image
+            aria-hidden
+            src="/file.svg"
+            alt="File icon"
+            width={16}
+            height={16}
+          />
+          Learn
+        </a>
+        <a
+          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
+          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Image
+            aria-hidden
+            src="/window.svg"
+            alt="Window icon"
+            width={16}
+            height={16}
+          />
+          Examples
+        </a>
+        <a
+          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
+          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Image
+            aria-hidden
+            src="/globe.svg"
+            alt="Globe icon"
+            width={16}
+            height={16}
+          />
+          Go to nextjs.org →
+        </a>
+      </footer>
+    </div>
+  );
+}
+
+
+
+File: /home/rvph/restaurant-management/client/src/app/error.tsx
+
+
+
+File: /home/rvph/restaurant-management/client/src/app/loading.tsx
+
+
+
+File: /home/rvph/restaurant-management/client/src/app/layout.tsx
+import type { Metadata } from "next";
+import localFont from "next/font/local";
+import "./globals.css";
+
+const geistSans = localFont({
+  src: "./fonts/GeistVF.woff",
+  variable: "--font-geist-sans",
+  weight: "100 900",
+});
+const geistMono = localFont({
+  src: "./fonts/GeistMonoVF.woff",
+  variable: "--font-geist-mono",
+  weight: "100 900",
+});
+
+export const metadata: Metadata = {
+  title: "Create Next App",
+  description: "Generated by create next app",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        {children}
+      </body>
+    </html>
+  );
+}
+
+
+
+File: /home/rvph/restaurant-management/client/src/app/auth/login/page.tsx
+
+
+
+File: /home/rvph/restaurant-management/client/src/app/auth/layout.tsx
+
+
+
+File: /home/rvph/restaurant-management/client/src/app/auth/register/page.tsx
+
+
+
+File: /home/rvph/restaurant-management/client/src/components/forms/register-form.tsx
+
+
+
+File: /home/rvph/restaurant-management/client/src/components/forms/login-form.tsx
+
+
+
+File: /home/rvph/restaurant-management/client/src/components/layout/sidebar.tsx
+
+
+
+File: /home/rvph/restaurant-management/client/src/components/layout/header.tsx
+
+
+
+File: /home/rvph/restaurant-management/client/src/components/layout/footer.tsx
+
+
+
+File: /home/rvph/restaurant-management/client/src/components/ui/button.tsx
+
+
+
+File: /home/rvph/restaurant-management/client/src/components/ui/card.tsx
+
+
+
+File: /home/rvph/restaurant-management/client/src/components/ui/table.tsx
+
+
+
+File: /home/rvph/restaurant-management/client/src/components/ui/input.tsx
+
+
+
+File: /home/rvph/restaurant-management/client/src/services/socket.ts
+
+
+
+File: /home/rvph/restaurant-management/client/src/services/api.ts
+
+
+
+File: /home/rvph/restaurant-management/client/src/services/auth.ts
+
+
+
+File: /home/rvph/restaurant-management/client/src/store/slices/order-slice.ts
+
+
+
+File: /home/rvph/restaurant-management/client/src/store/slices/ui-slice.ts
+
+
+
+File: /home/rvph/restaurant-management/client/src/store/slices/auth-slice.ts
+
+
+
+File: /home/rvph/restaurant-management/client/src/store/index.ts
+
+
+
+File: /home/rvph/restaurant-management/client/src/types/index.ts
+
+
+
+File: /home/rvph/restaurant-management/client/src/lib/constants.ts
+
+
+
+File: /home/rvph/restaurant-management/client/src/lib/utils.ts
+
+
+
+File: /home/rvph/restaurant-management/client/src/lib/api-client.ts
+
+
+
+File: /home/rvph/restaurant-management/client/tailwind.config.ts
+import type { Config } from "tailwindcss";
+
+export default {
+  content: [
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+      },
+    },
+  },
+  plugins: [],
+} satisfies Config;
+
+
+
+File: /home/rvph/restaurant-management/client/postcss.config.mjs
+/** @type {import('postcss-load-config').Config} */
+const config = {
+  plugins: {
+    tailwindcss: {},
+  },
+};
+
+export default config;
+
+
+
+File: /home/rvph/restaurant-management/docker/wait-for-it.sh
+#!/bin/sh
+set -e
+
+host="$1"
+shift
+cmd="$@"
+
+until PGPASSWORD=$POSTGRES_PASSWORD psql -h "postgres" -U "postgres" -c '\q'; do
+  >&2 echo "Postgres is unavailable - sleeping"
+  sleep 1
+done
+
+>&2 echo "Postgres is up - executing command"
+exec $cmd
+
+
