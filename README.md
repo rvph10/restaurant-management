@@ -1,188 +1,179 @@
-# Restaurant Management System 🍽️
-
+# Restaurant Management System 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node](https://img.shields.io/badge/Node-v18.0%2B-brightgreen)](https://nodejs.org/)
-[![React](https://img.shields.io/badge/React-v18.2.0-blue)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-v5.3.2-blue)](https://www.typescriptlang.org/)
-[![Docker](https://img.shields.io/badge/Docker-v24.0%2B-blue)](https://www.docker.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-15.0.3-black.svg)](https://nextjs.org/)
+[![Express.js](https://img.shields.io/badge/Express.js-4.21.1-lightgrey.svg)](https://expressjs.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791.svg)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Redis-7-red.svg)](https://redis.io/)
+[![Docker](https://img.shields.io/badge/Docker-🐳-blue.svg)](https://www.docker.com/)
+[![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://conventionalcommits.org)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
-A comprehensive restaurant management system featuring real-time delivery tracking, task management, and order processing. Built with modern technologies and scalable architecture.
+## Project Overview
+A full-stack restaurant management system built with Next.js, Express, and PostgreSQL, designed to handle order processing, delivery tracking, staff management, and cleaning tasks.
 
-![Restaurant Management System](https://via.placeholder.com/800x400?text=Restaurant+Management+System)
-
-## ✨ Features
-
-- 📱 Real-time delivery tracking
-- 🧹 Task management for cleaning and maintenance
-- 👥 Role-based order processing
-- 🔄 Real-time order status updates
-- 📦 Inventory management
-- 🔐 Secure authentication system
-- 📊 Analytics dashboard
-
-## 🚀 Tech Stack
-
+## Technology Stack
 ### Frontend
-- **Framework:** React 18 with TypeScript
-- **State Management:** Redux Toolkit
-- **Styling:** TailwindCSS
-- **Real-time Communication:** Socket.IO Client
-- **Routing:** React Router v6
+- Next.js 15.0.3 (React 19)
+- TailwindCSS for styling
+- Redux Toolkit for state management
+- React Query for data fetching
+- Socket.IO for real-time updates
 
 ### Backend
-- **Runtime:** Node.js with Express
-- **Language:** TypeScript
-- **Database:** PostgreSQL
-- **Caching:** Redis
-- **Real-time:** Socket.IO
-- **Authentication:** JWT
+- Node.js with Express
+- TypeScript
+- PostgreSQL with Knex.js
+- Redis for caching
+- Socket.IO for real-time communication
 
-### DevOps
-- **Containerization:** Docker & Docker Compose
-- **Version Control:** Git & GitHub
-- **CI/CD:** GitHub Actions
-- **Development:** WSL2 with Ubuntu
+### Infrastructure
+- Docker and Docker Compose
+- WSL (Windows Subsystem for Linux)
+- Ubuntu development environment
 
-## 📋 Prerequisites
-
-Before you begin, ensure you have met the following requirements:
-
-- Node.js >= 18.0.0
-- Docker >= 24.0.0
-- Docker Compose >= 2.0.0
-- Git >= 2.0.0
-- WSL2 with Ubuntu (for Windows users)
-
-## 🛠️ Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/rvph10/restaurant-management.git
-cd restaurant-management
+## Project Structure
 ```
+├── client/                  # Next.js frontend application
+│   ├── src/
+│   │   ├── app/            # Next.js 13+ app directory
+│   │   ├── components/     # Reusable React components
+│   │   ├── hooks/         # Custom React hooks
+│   │   ├── services/      # API service layers
+│   │   └── store/         # Redux store configuration
+├── server/                 # Express backend application
+│   ├── src/
+│   │   ├── controllers/   # Route controllers
+│   │   ├── services/      # Business logic
+│   │   ├── models/        # Database models
+│   │   └── middleware/    # Express middleware
+└── docker/                # Docker configuration files
+```
+
+## Setup Instructions
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/rvph10/restaurant-management.git
+   ```
 
 2. Install dependencies:
+   ```bash
+   npm run setup
+   ```
+
+3. Configure environment variables:
+   - Copy `.env.example` to `.env` in both client and server directories
+   - Update variables as needed
+
+4. Start development environment:
+   ```bash
+   docker-compose up
+   ```
+
+## Development Workflow
+
+### Branch Strategy
+- `main`: Production-ready code
+- `develop`: Integration branch
+- `feature/*`: New features
+- `bugfix/*`: Bug fixes
+- `hotfix/*`: Production hotfixes
+
+### Commit Convention
+```
+type(scope): description
+
+- feat: New feature
+- fix: Bug fix
+- docs: Documentation
+- style: Formatting
+- refactor: Code restructuring
+- test: Adding tests
+- chore: Maintenance
+```
+
+### Database Migrations
+Run migrations:
 ```bash
-npm run setup
+cd server
+npm run migrate
 ```
 
-3. Set up environment variables:
+Create new migration:
 ```bash
-# Copy example env files
-cp .env.example .env
-cp client/.env.example client/.env
-cp server/.env.example server/.env
+npx knex migrate:make migration_name
 ```
 
-4. Start the development environment:
+## API Documentation
+
+### Authentication
+```typescript
+POST /api/auth/login
+POST /api/auth/register
+POST /api/auth/refresh-token
+```
+
+### Orders
+```typescript
+GET /api/orders
+POST /api/orders
+GET /api/orders/:id
+PATCH /api/orders/:id
+```
+
+### Delivery
+```typescript
+GET /api/delivery
+POST /api/delivery/assign
+PATCH /api/delivery/:id/status
+```
+
+### Cleaning
+```typescript
+GET /api/cleaning/tasks
+POST /api/cleaning/tasks
+PATCH /api/cleaning/tasks/:id
+```
+
+## Testing
 ```bash
-docker-compose up
+# Run backend tests
+cd server
+npm run test
+
+# Run frontend tests
+cd client
+npm run test
 ```
 
-The application will be available at:
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:5000
-- API Documentation: http://localhost:5000/api-docs
-
-## 🏗️ Project Structure
-
-```
-restaurant-management/
-├── client
-│   └── src
-│       ├── assets
-│       ├── components
-│       │   ├── common
-│       │   ├── layout
-│       │   └── specific
-│       ├── config
-│       ├── features
-│       │   ├── auth
-│       │   ├── cleaning
-│       │   ├── delivery
-│       │   └── orders
-│       ├── hooks
-│       ├── services
-│       ├── store
-│       ├── types
-│       └── utils
-├── docker
-└── server
-    └── src
-        ├── config
-        ├── controllers
-        ├── middleware
-        ├── models
-        ├── routes
-        ├── services
-        ├── sockets
-        └── utils
-```
-
-## 🔨 Scripts
+## Deployment
+The application is containerized and can be deployed using Docker Compose:
 
 ```bash
-# Development
-npm run dev         # Start both client and server in development mode
-npm run client      # Start client only
-npm run server      # Start server only
-npm run setup       # Install npm dependecies 
-
-# Production
-npm run build       # Build both client and server
-npm start           # Start production server
+# Production build
+docker-compose -f docker-compose.prod.yml up -d
 ```
 
-## 🧪 Testing
+## Monitoring & Logging
+- Application logs are handled by the custom logger utility
+- Server logs are available through Docker logs
+- PostgreSQL logs are stored in the postgres_data volume
 
-```bash
-# Run all tests
-npm test
+## Security Considerations
+- JWT authentication with refresh tokens
+- Role-based access control (RBAC)
+- Rate limiting on API endpoints
+- SQL injection prevention through Knex.js
+- XSS protection through React's built-in escaping
+- CORS configuration for API access
 
-# Run tests with coverage
-npm run test:coverage
-```
+## Contributing
+1. Fork the repository
+2. Create a feature branch
+3. Commit changes
+4. Push to the branch
+5. Create a Pull Request
 
-## 📝 API Documentation
-
-API documentation is available at `/api-docs` when running the server. It includes:
-- Endpoint descriptions
-- Request/response examples
-- Authentication requirements
-- WebSocket events
-
-## 🤝 Contributing
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-Please ensure you have:
-- [ ] Added tests for new features
-- [ ] Updated documentation
-- [ ] Followed the code style guidelines
-- [ ] Added appropriate comments
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 👥 Team
-
-- **RVPH** - _Initial work_ - [rvph10](https://github.com/rvph10)
-
-## 📞 Support
-
-For support, please open an issue in the GitHub repository or contact the development team.
-
-## 🙏 Acknowledgments
-
-- React Team for the amazing framework
-- Docker Team for containerization
-- All contributors who have helped this project
-
----
-⭐️ Star me on GitHub — it motivates a lot!
+## License
+This project is licensed under the MIT License - see the LICENSE file for details.
